@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择测评干部 - 中层干部测评系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: 0.3s;
+        }
+        .card:hover {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            transform: translateY(-5px);
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">中层干部测评系统</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/evaluation/select-cadre">进行测评</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/evaluation/result">测评结果</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="mb-4">选择要测评的干部</h2>
+        
+        <div class="alert alert-info">
+            请从下列中层干部中选择一位进行测评。
+        </div>
+        
+        <div class="row">
+            <div th:each="cadre : ${cadreList}" class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0" th:text="${cadre.name}">干部姓名</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>部门：</strong> <span th:text="${cadre.department}">部门名称</span></p>
+                        <p><strong>职位：</strong> <span th:text="${cadre.position}">职位名称</span></p>
+                        <a th:href="@{/evaluation/form(cadreId=${cadre.id})}" class="btn btn-primary btn-block">
+                            对该干部进行测评
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 没有干部数据时显示 -->
+        <div class="alert alert-warning" th:if="${#lists.isEmpty(cadreList)}">
+            暂无可评价的干部数据，请联系管理员添加干部信息。
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>中层干部测评系统</h5>
+                    <p>提供全面、客观、公正的干部测评服务</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <p>&copy; 2025 中层干部测评系统</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

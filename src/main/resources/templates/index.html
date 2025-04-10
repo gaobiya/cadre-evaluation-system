@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中层干部测评系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>
+        .jumbotron {
+            background-color: #f8f9fa;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: 0.3s;
+        }
+        .card:hover {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+        }
+        .dropdown-menu {
+            min-width: 200px; 
+        }
+        .dropdown-item {
+            padding: 8px 16px;
+        }
+        .user-welcome {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">中层干部测评系统</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto" id="navbarMenu">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <!-- 导航菜单项将根据用户角色动态加载 -->
+                </ul>
+                <div class="navbar-nav" id="userInfoNav">
+                    <!-- 用户信息将通过JavaScript动态加载 -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="jumbotron">
+        <div class="container">
+            <h1 class="display-4">中层干部测评系统</h1>
+            <p class="lead">对中层干部进行全面、客观、公正的测评，提升管理效能</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row" id="featureCards">
+            <!-- 功能卡片将根据用户角色动态加载 -->
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>中层干部测评系统</h5>
+                    <p>提供全面、客观、公正的干部测评服务</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <p>&copy; 2025 中层干部测评系统</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 获取当前登录用户信息
+            loadCurrentUser();
+            
+            // 退出登录
+            $(document).on('click', '#logoutBtn', function() {
+                $.ajax({
+                    url: '/api/user/logout',
+                    type: 'POST',
+                    success: function(response) {
+                        if (response.code === 200) {
+                            window.location.href = '/login';
+                        }
+                    }
+                });
+            });
+        });
+        
+        // 加载当前登录用户信息
+        function loadCurrentUser() {
+            $.ajax({
+                url: '/api/user/current',
+                type: 'GET',
+                success: function(response) {
+                    if (response.code === 200) {
+                        var user = response.data;
+                        
+                        // 根据用户角色加载导航菜单
+                        loadNavigationMenu(user.role);
+                        
+                        // 根据用户角色加载功能卡片
+                        loadFeatureCards(user.role);
+                        
+                        // 设置用户信息导航
+                        var userNav = '';
+                        if (user.role === 'ADMIN') {
+                            userNav = '<div class="dropdown">' +
+                                '<div class="user-welcome mr-2">欢迎您，管理员 ' + user.name + '</div>' +
+                                '<button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-toggle="dropdown">' +
+                                '<i class="fa fa-user"></i>' +
+                                '</button>' +
+                                '<div class="dropdown-menu dropdown-menu-right">' +
+                                '<a class="dropdown-item" href="#"><i class="fa fa-cog"></i> 系统管理</a>' +
+                                '<div class="dropdown-divider"></div>' +
+                                '<a class="dropdown-item" href="#" id="logoutBtn"><i class="fa fa-sign-out"></i> 退出登录</a>' +
+                                '</div>' +
+                                '</div>';
+                        } else {
+                            userNav = '<div class="dropdown">' +
+                                '<div class="user-welcome mr-2">欢迎您，' + user.name + '</div>' +
+                                '<button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-toggle="dropdown">' +
+                                '<i class="fa fa-user"></i>' +
+                                '</button>' +
+                                '<div class="dropdown-menu dropdown-menu-right">' +
+                                '<a class="dropdown-item" href="#"><i class="fa fa-user-circle"></i> 个人信息</a>' +
+                                '<div class="dropdown-divider"></div>' +
+                                '<a class="dropdown-item" href="#" id="logoutBtn"><i class="fa fa-sign-out"></i> 退出登录</a>' +
+                                '</div>' +
+                                '</div>';
+                        }
+                        
+                        $('#userInfoNav').html(userNav);
+                    } else {
+                        // 未登录，显示默认功能
+                        loadNavigationMenu('');
+                        loadFeatureCards('');
+                        
+                        // 显示登录链接
+                        var loginNav = '<a class="btn btn-outline-light my-2 my-sm-0" href="/login">登录</a>' +
+                                      '<a class="btn btn-light my-2 my-sm-0 ml-2" href="/register">注册</a>';
+                        $('#userInfoNav').html(loginNav);
+                    }
+                },
+                error: function() {
+                    // 未登录或获取失败，显示默认功能
+                    loadNavigationMenu('');
+                    loadFeatureCards('');
+                    
+                    // 显示登录链接
+                    var loginNav = '<a class="btn btn-outline-light my-2 my-sm-0" href="/login">登录</a>' +
+                                  '<a class="btn btn-light my-2 my-sm-0 ml-2" href="/register">注册</a>';
+                    $('#userInfoNav').html(loginNav);
+                }
+            });
+        }
+        
+        // 根据用户角色加载导航菜单
+        function loadNavigationMenu(role) {
+            var navMenu = '<li class="nav-item active"><a class="nav-link" href="/">首页</a></li>';
+            
+            if (role === 'ADMIN') {
+                // 管理员可以看到所有功能
+                navMenu += '<li class="nav-item"><a class="nav-link" href="/cadre/list">干部管理</a></li>';
+                navMenu += '<li class="nav-item"><a class="nav-link" href="/evaluation/select-cadre">进行测评</a></li>';
+                navMenu += '<li class="nav-item"><a class="nav-link" href="/evaluation/result">测评结果</a></li>';
+                navMenu += '<li class="nav-item"><a class="nav-link" href="/evaluation/period">测评周期管理</a></li>';
+            } else if (role === 'USER') {
+                // 普通用户只能测评和查看结果
+                navMenu += '<li class="nav-item"><a class="nav-link" href="/evaluation/select-cadre">进行测评</a></li>';
+                navMenu += '<li class="nav-item"><a class="nav-link" href="/evaluation/result">测评结果</a></li>';
+            } else {
+                // 未登录用户只显示首页，或者可以根据需要调整
+                // 这里暂时不添加额外菜单项
+            }
+            
+            $('#navbarMenu').html(navMenu);
+        }
+        
+        // 根据用户角色加载功能卡片
+        function loadFeatureCards(role) {
+            var cards = '';
+            
+            if (role === 'ADMIN') {
+                // 管理员可以看到干部管理卡片
+                cards += '<div class="col-md-3">' +
+                    '<div class="card">' +
+                    '<div class="card-header">' +
+                    '<h5 class="card-title mb-0">干部管理</h5>' +
+                    '</div>' +
+                    '<div class="card-body">' +
+                    '<p class="card-text">查看和管理中层干部信息，包括个人基本信息和工作情况等事宜。</p>' +
+                    '<a href="/cadre/list" class="btn btn-primary">查看干部列表</a>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+                    
+                // 管理员可以看到测评周期管理卡片
+                cards += '<div class="col-md-3">' +
+                    '<div class="card">' +
+                    '<div class="card-header">' +
+                    '<h5 class="card-title mb-0">测评周期管理</h5>' +
+                    '</div>' +
+                    '<div class="card-body">' +
+                    '<p class="card-text">设置和管理测评周期，控制用户在特定时间段内只能对同一干部评价一次。</p>' +
+                    '<a href="/evaluation/period" class="btn btn-primary">管理测评周期</a>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+            }
+            
+            // 所有登录用户都可以看到测评卡片
+            if (role === 'ADMIN' || role === 'USER') {
+                cards += '<div class="col-md-' + (role === 'ADMIN' ? '3' : '6') + '">' +
+                    '<div class="card">' +
+                    '<div class="card-header">' +
+                    '<h5 class="card-title mb-0">干部测评</h5>' +
+                    '</div>' +
+                    '<div class="card-body">' +
+                    '<p class="card-text">对中层干部进行工作能力、工作态度、工作业绩和工作纪律的测评。</p>' +
+                    '<a href="/evaluation/select-cadre" class="btn btn-primary">进行测评</a>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+                
+                cards += '<div class="col-md-' + (role === 'ADMIN' ? '3' : '6') + '">' +
+                    '<div class="card">' +
+                    '<div class="card-header">' +
+                    '<h5 class="card-title mb-0">测评结果</h5>' +
+                    '</div>' +
+                    '<div class="card-body">' +
+                    '<p class="card-text">查看中层干部的测评结果，包括综合得分和各项指标得分等事宜。</p>' +
+                    '<a href="/evaluation/result" class="btn btn-primary">查看测评结果</a>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+            } else {
+                // 未登录用户显示登录提示
+                cards += '<div class="col-md-12">' +
+                    '<div class="card">' +
+                    '<div class="card-header">' +
+                    '<h5 class="card-title mb-0">欢迎使用</h5>' +
+                    '</div>' +
+                    '<div class="card-body text-center">' +
+                    '<p class="card-text">请登录后使用中层干部测评系统的全部功能。</p>' +
+                    '<a href="/login" class="btn btn-primary">立即登录</a>' +
+                    '<a href="/register" class="btn btn-outline-secondary ml-2">注册账号</a>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+            }
+            
+            $('#featureCards').html(cards);
+        }
+    </script>
+</body>
+</html> 

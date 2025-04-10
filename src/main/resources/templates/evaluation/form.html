@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>干部测评 - 中层干部测评系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+        }
+        .criteria-description {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .evaluation-score {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .dropdown-menu {
+            min-width: 200px;
+        }
+        .dropdown-item {
+            padding: 8px 16px;
+        }
+        .user-welcome {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">中层干部测评系统</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cadre/list">干部列表</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/evaluation/form">进行测评</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/evaluation/result">测评结果</a>
+                    </li>
+                </ul>
+                <div class="navbar-nav" id="userInfoNav">
+                    <!-- 用户信息将通过JavaScript动态加载 -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">中层干部测评表</h5>
+            </div>
+            <div class="card-body">
+                <form id="evaluationForm">
+                    <div class="form-group">
+                        <label>被评干部信息</label>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 id="cadreName" class="mb-2">正在加载干部信息...</h5>
+                                <p id="cadreDepartment" class="mb-1"></p>
+                                <p id="cadrePosition" class="mb-0"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="evaluatorName">评价人姓名</label>
+                        <input type="text" class="form-control" id="evaluatorName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="evaluatorDept">评价人部门</label>
+                        <input type="text" class="form-control" id="evaluatorDept" required>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h5>测评指标</h5>
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle"></i> 请根据对干部的了解，对以下各项指标进行评分（1-10分）
+                        </div>
+                        
+                        <div id="criteriaContainer">
+                            <!-- 测评指标将通过JavaScript动态加载 -->
+                        </div>
+                    </div>
+                    
+                    <div class="form-group mt-4">
+                        <label for="comments">评价意见</label>
+                        <textarea class="form-control" id="comments" rows="5" placeholder="请输入您的评价意见或建议..."></textarea>
+                    </div>
+                    
+                    <div class="form-group text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">提交评价</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>中层干部测评系统</h5>
+                    <p>提供全面、客观、公正的干部测评服务</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <p>&copy; 2025 中层干部测评系统</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 从URL获取干部ID
+            const cadreId = getUrlParameter('cadreId');
+            if (!cadreId) {
+                alert('请先选择要评价的干部');
+                window.location.href = '/evaluation/select-cadre';
+                return;
+            }
+            
+            // 检查用户是否有权限评价
+            checkEvaluationPermission(cadreId);
+            
+            // 加载用户信息
+            loadUserInfo();
+            // 加载干部信息
+            loadCadreInfo(cadreId);
+            // 加载评价指标
+            loadCriteria();
+            
+            // 表单提交
+            $("#evaluationForm").submit(function(e) {
+                e.preventDefault();
+                submitEvaluation(cadreId);
+            });
+        });
+        
+        // 从URL获取参数的函数
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        }
+        
+        // 检查用户是否有权限评价
+        function checkEvaluationPermission(cadreId) {
+            $.ajax({
+                url: '/api/evaluation/check-permission',
+                type: 'GET',
+                data: { cadreId: cadreId },
+                success: function(response) {
+                    if (response.code !== 200) {
+                        alert(response.message);
+                        window.location.href = '/evaluation/select-cadre';
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('检查评价权限失败:', xhr.responseText);
+                    alert('检查评价权限失败，请稍后再试');
+                    window.location.href = '/evaluation/select-cadre';
+                }
+            });
+        }
+        
+        // 加载登录用户信息
+        function loadUserInfo() {
+            $.ajax({
+                url: '/api/user/current',
+                type: 'GET',
+                success: function(response) {
+                    console.log('用户信息响应:', response);
+                    // 兼容两种响应格式
+                    if (response.success || response.code === 200) {
+                        const user = response.data;
+                        $("#evaluatorName").val(user.username || user.name);
+                        $("#evaluatorDept").val(user.department || '');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('加载用户信息失败:', xhr.responseText);
+                }
+            });
+        }
+        
+        // 加载干部信息
+        function loadCadreInfo(cadreId) {
+            $.ajax({
+                url: '/api/cadre/' + cadreId,
+                type: 'GET',
+                success: function(response) {
+                    console.log('干部信息响应:', response);
+                    // 兼容两种响应格式
+                    if (response.success || response.code === 200) {
+                        const cadre = response.data;
+                        $("#cadreName").text(cadre.name);
+                        $("#cadreDepartment").text('部门: ' + cadre.department);
+                        $("#cadrePosition").text('职位: ' + cadre.position);
+                    } else {
+                        alert('加载干部信息失败: ' + (response.message || '未知错误'));
+                        window.location.href = '/evaluation/select-cadre';
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('加载干部信息失败:', xhr.responseText);
+                    alert('加载干部信息失败，请稍后再试');
+                    window.location.href = '/evaluation/select-cadre';
+                }
+            });
+        }
+        
+        // 加载评价指标
+        function loadCriteria() {
+            $.ajax({
+                url: '/api/evaluation/criteria/list',
+                type: 'GET',
+                success: function(response) {
+                    console.log('评价指标响应:', response);
+                    // 兼容两种响应格式
+                    if (response.success || response.code === 200) {
+                        var criteriaList = response.data;
+                        var container = $('#criteriaContainer');
+                        container.empty();
+                        
+                        if (criteriaList && criteriaList.length > 0) {
+                            // 按类别进行分组
+                            var criteriaByCategory = {};
+                            var categoryOrder = ["德", "能", "勤", "绩", "廉"];
+                            var categoryWeights = {"德": 15, "能": 20, "勤": 15, "绩": 40, "廉": 10};
+                            
+                            // 对标准进行分组
+                            criteriaList.forEach(function(criteria) {
+                                if (!criteriaByCategory[criteria.category]) {
+                                    criteriaByCategory[criteria.category] = [];
+                                }
+                                criteriaByCategory[criteria.category].push(criteria);
+                            });
+                            
+                            // 创建分类表格
+                            var tableHtml = '<table class="table table-bordered">' +
+                                '<thead class="thead-light">' +
+                                '<tr>' +
+                                '<th width="15%">考核项目</th>' +
+                                '<th width="15%">评价要素</th>' +
+                                '<th width="40%">评价内容</th>' +
+                                '<th width="30%" class="text-center">评价等次</th>' +
+                                '</tr>' +
+                                '</thead>' +
+                                '<tbody>';
+                            
+                            // 按预定义顺序生成表格内容
+                            categoryOrder.forEach(function(category) {
+                                if (criteriaByCategory[category]) {
+                                    var firstRow = true;
+                                    var categoryItems = criteriaByCategory[category];
+                                    var categoryRowspan = categoryItems.length;
+                                    
+                                    categoryItems.forEach(function(criteria, index) {
+                                        tableHtml += '<tr>';
+                                        
+                                        // 第一列：考核项目（仅第一行显示）
+                                        if (firstRow) {
+                                            tableHtml += '<td rowspan="' + categoryRowspan + '">' + 
+                                                category + ' (' + categoryWeights[category] + '分)</td>';
+                                        }
+                                        
+                                        // 第二列：评价要素
+                                        tableHtml += '<td>' + criteria.name + 
+                                            ' <span class="badge badge-secondary">(' + criteria.weight + '分)</span></td>';
+                                        
+                                        // 第三列：评价内容
+                                        tableHtml += '<td>' + criteria.description + 
+                                            '<input type="hidden" data-id="' + criteria.id + '" class="criteria-item"></td>';
+                                        
+                                        // 第四列：评价等次
+                                        tableHtml += '<td class="text-center">' +
+                                            '<div class="form-check form-check-inline">' +
+                                            '<input class="form-check-input" type="radio" name="score-' + criteria.id + 
+                                            '" id="score-' + criteria.id + '-10" value="10">' +
+                                            '<label class="form-check-label" for="score-' + criteria.id + '-10">好</label>' +
+                                            '</div>' +
+                                            '<div class="form-check form-check-inline">' +
+                                            '<input class="form-check-input" type="radio" name="score-' + criteria.id + 
+                                            '" id="score-' + criteria.id + '-8" value="8">' +
+                                            '<label class="form-check-label" for="score-' + criteria.id + '-8">较好</label>' +
+                                            '</div>' +
+                                            '<div class="form-check form-check-inline">' +
+                                            '<input class="form-check-input" type="radio" name="score-' + criteria.id + 
+                                            '" id="score-' + criteria.id + '-6" value="6">' +
+                                            '<label class="form-check-label" for="score-' + criteria.id + '-6">一般</label>' +
+                                            '</div>' +
+                                            '<div class="form-check form-check-inline">' +
+                                            '<input class="form-check-input" type="radio" name="score-' + criteria.id + 
+                                            '" id="score-' + criteria.id + '-4" value="4">' +
+                                            '<label class="form-check-label" for="score-' + criteria.id + '-4">差</label>' +
+                                            '</div>' +
+                                            '</td>';
+                                        
+                                        tableHtml += '</tr>';
+                                        firstRow = false;
+                                    });
+                                }
+                            });
+                            
+                            tableHtml += '</tbody></table>';
+                            container.html(tableHtml);
+                            
+                        } else {
+                            container.html('<div class="alert alert-warning">未找到评价指标，请联系管理员添加评价指标。</div>');
+                        }
+                    } else {
+                        alert('加载评价指标失败: ' + (response.message || '未知错误'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('加载评价指标失败:', xhr.responseText);
+                    $('#criteriaContainer').html('<div class="alert alert-danger">加载评价指标失败，请刷新页面重试</div>');
+                }
+            });
+        }
+        
+        // 提交测评
+        function submitEvaluation(cadreId) {
+            if (!validateForm()) {
+                return;
+            }
+            
+            var evaluatorName = $('#evaluatorName').val();
+            var evaluatorDept = $('#evaluatorDept').val();
+            var comments = $('#comments').val();
+            
+            var evaluations = [];
+            $('.criteria-item').each(function() {
+                var criteriaId = $(this).data('id');
+                var score = $('input[name="score-' + criteriaId + '"]:checked').val();
+                
+                var evaluation = {
+                    cadreId: cadreId,
+                    criteriaId: criteriaId,
+                    score: score,
+                    evaluatorName: evaluatorName,
+                    evaluatorDept: evaluatorDept
+                };
+                
+                // 只在第一个指标中添加评语
+                if (evaluations.length === 0) {
+                    evaluation.comments = comments;
+                }
+                
+                evaluations.push(evaluation);
+            });
+            
+            // 发送批量添加请求
+            $.ajax({
+                url: '/api/evaluation/batch/add',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(evaluations),
+                success: function(response) {
+                    if (response.code === 200) {
+                        // 测评成功直接跳转到测评结果页面
+                        window.location.href = '/evaluation/result';
+                    } else {
+                        alert('测评提交失败: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('提交测评失败:', xhr.responseText);
+                    alert('测评提交失败，请稍后再试');
+                }
+            });
+        }
+        
+        // 验证表单
+        function validateForm() {
+            if (!$('#evaluatorName').val()) {
+                alert('请输入评价人姓名');
+                return false;
+            }
+            
+            if (!$('#evaluatorDept').val()) {
+                alert('请输入评价人部门');
+                return false;
+            }
+            
+            var valid = true;
+            $('.criteria-item').each(function() {
+                var criteriaId = $(this).data('id');
+                var scoreChecked = $('input[name="score-' + criteriaId + '"]:checked').length > 0;
+                
+                if (!scoreChecked) {
+                    alert('请为所有指标选择评分等次');
+                    valid = false;
+                    return false;
+                }
+            });
+            
+            return valid;
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测评周期管理 - 中层干部测评系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+        }
+        .user-welcome {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            color: #fff;
+        }
+        .period-card {
+            transition: all 0.3s;
+        }
+        .period-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        .period-card.active {
+            border: 2px solid #28a745;
+        }
+        .period-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">中层干部测评系统</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cadre/list">干部列表</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/evaluation/select-cadre">进行测评</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/evaluation/result">测评结果</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/evaluation/period">测评周期管理</a>
+                    </li>
+                </ul>
+                <div class="navbar-nav" id="userInfoNav">
+                    <!-- 用户信息将通过JavaScript动态加载 -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">测评周期管理</h5>
+                <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#addPeriodModal">
+                    <i class="fa fa-plus"></i> 添加新周期
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle"></i> 测评周期用于控制用户在特定时间段内对同一干部只能评价一次
+                </div>
+                
+                <div class="row" id="periodList">
+                    <!-- 测评周期列表将通过JavaScript动态加载 -->
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">加载中...</span>
+                        </div>
+                        <p class="mt-2">正在加载测评周期数据...</p>
+                    </div>
+                </div>
+                
+                <!-- 分页控件 -->
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <nav aria-label="测评周期分页">
+                            <ul class="pagination justify-content-center" id="periodPagination">
+                                <!-- 分页按钮会通过JavaScript动态添加 -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加/编辑测评周期模态框 -->
+    <div class="modal fade" id="addPeriodModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="periodModalTitle">添加新测评周期</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="periodForm">
+                        <input type="hidden" id="periodId">
+                        <div class="form-group">
+                            <label for="periodName">周期名称</label>
+                            <input type="text" class="form-control" id="periodName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="startTime">开始时间</label>
+                            <input type="datetime-local" class="form-control" id="startTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="endTime">结束时间</label>
+                            <input type="datetime-local" class="form-control" id="endTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="periodDescription">描述</label>
+                            <textarea class="form-control" id="periodDescription" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="isActive" checked>
+                                <label class="custom-control-label" for="isActive">激活此测评周期</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="savePeriodBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>中层干部测评系统</h5>
+                    <p>提供全面、客观、公正的干部测评服务</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <p>&copy; 2025 中层干部测评系统</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 初始化分页变量
+            var currentPage = 1;
+            var pageSize = 6; // 每页显示6个周期卡片
+            
+            // 检查用户权限
+            checkAdmin();
+            
+            // 加载测评周期列表（分页）
+            loadPeriodsByPage(currentPage, pageSize);
+            
+            // 保存周期
+            $('#savePeriodBtn').click(function() {
+                savePeriod();
+            });
+            
+            // 分页按钮点击事件
+            $(document).on('click', '.page-link', function(e) {
+                e.preventDefault();
+                var targetPage = $(this).data('page');
+                if (targetPage !== currentPage) {
+                    currentPage = targetPage;
+                    loadPeriodsByPage(currentPage, pageSize);
+                }
+            });
+        });
+        
+        // 检查是否是管理员
+        function checkAdmin() {
+            $.ajax({
+                url: '/api/user/current',
+                type: 'GET',
+                success: function(response) {
+                    if (response.code === 200) {
+                        const user = response.data;
+                        if (user.role !== 'ADMIN') {
+                            // 非管理员重定向到首页
+                            alert('只有管理员才能访问此页面');
+                            window.location.href = '/';
+                        }
+                    } else {
+                        // 未登录重定向到登录页
+                        window.location.href = '/login';
+                    }
+                },
+                error: function() {
+                    window.location.href = '/login';
+                }
+            });
+        }
+        
+        // 加载测评周期列表（分页版本）
+        function loadPeriodsByPage(pageNum, pageSize) {
+            $.ajax({
+                url: '/api/evaluation/period/page',
+                type: 'GET',
+                data: {
+                    pageNum: pageNum,
+                    pageSize: pageSize
+                },
+                success: function(response) {
+                    if (response.code === 200) {
+                        const pageResult = response.data;
+                        const periods = pageResult.list;
+                        renderPeriods(periods);
+                        renderPeriodPagination(pageResult);
+                    } else {
+                        $('#periodList').html('<div class="col-12"><div class="alert alert-danger">加载测评周期失败: ' + response.message + '</div></div>');
+                    }
+                },
+                error: function() {
+                    $('#periodList').html('<div class="col-12"><div class="alert alert-danger">加载测评周期失败，请稍后再试</div></div>');
+                }
+            });
+        }
+        
+        // 渲染测评周期列表
+        function renderPeriods(periods) {
+            const periodList = $('#periodList');
+            periodList.empty();
+            
+            if (periods.length === 0) {
+                periodList.html('<div class="col-12"><div class="alert alert-warning">暂无测评周期数据</div></div>');
+                return;
+            }
+            
+            // 获取当前时间
+            const now = new Date();
+            
+            periods.forEach(period => {
+                const startTime = new Date(period.startTime);
+                const endTime = new Date(period.endTime);
+                
+                // 判断周期状态
+                let statusClass = '';
+                let statusText = '';
+                
+                if (!period.isActive) {
+                    statusClass = 'badge-secondary';
+                    statusText = '已禁用';
+                } else if (startTime > now) {
+                    statusClass = 'badge-info';
+                    statusText = '即将开始';
+                } else if (endTime < now) {
+                    statusClass = 'badge-dark';
+                    statusText = '已结束';
+                } else {
+                    statusClass = 'badge-success';
+                    statusText = '进行中';
+                }
+                
+                // 格式化时间
+                const formatDate = (date) => {
+                    return date.getFullYear() + '-' +
+                        String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                        String(date.getDate()).padStart(2, '0') + ' ' +
+                        String(date.getHours()).padStart(2, '0') + ':' +
+                        String(date.getMinutes()).padStart(2, '0');
+                };
+                
+                const periodCard = `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card period-card ${period.isActive && startTime <= now && endTime >= now ? 'active' : ''}">
+                            <div class="card-body">
+                                <span class="period-status badge ${statusClass}">${statusText}</span>
+                                <h5 class="card-title mt-3">${period.name}</h5>
+                                <p class="card-text">${period.description || '暂无描述'}</p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <i class="fa fa-calendar"></i> ${formatDate(startTime)} 至 ${formatDate(endTime)}
+                                    </small>
+                                </p>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-outline-primary edit-period" data-id="${period.id}">
+                                        <i class="fa fa-edit"></i> 编辑
+                                    </button>
+                                    <button class="btn btn-sm ${period.isActive ? 'btn-outline-warning' : 'btn-outline-success'} toggle-period" data-id="${period.id}" data-active="${period.isActive}">
+                                        <i class="fa ${period.isActive ? 'fa-ban' : 'fa-check'}"></i> ${period.isActive ? '禁用' : '启用'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                periodList.append(periodCard);
+            });
+            
+            // 绑定编辑按钮事件
+            $('.edit-period').click(function() {
+                const periodId = $(this).data('id');
+                editPeriod(periodId);
+            });
+            
+            // 绑定切换状态按钮事件
+            $('.toggle-period').click(function() {
+                const periodId = $(this).data('id');
+                const isActive = $(this).data('active');
+                togglePeriodStatus(periodId, !isActive);
+            });
+        }
+        
+        // 渲染分页控件
+        function renderPeriodPagination(pageResult) {
+            var pagination = $('#periodPagination');
+            pagination.empty();
+            
+            // 添加"上一页"按钮
+            var prevDisabled = !pageResult.hasPrevious ? 'disabled' : '';
+            var prevBtn = '<li class="page-item ' + prevDisabled + '">' +
+                '<a class="page-link" href="#" data-page="' + (pageResult.pageNum - 1) + '" aria-label="上一页">' +
+                '<span aria-hidden="true">&laquo;</span>' +
+                '</a>' +
+                '</li>';
+            pagination.append(prevBtn);
+            
+            // 添加页码按钮
+            var startPage = Math.max(1, pageResult.pageNum - 2);
+            var endPage = Math.min(pageResult.pages, pageResult.pageNum + 2);
+            
+            for (var i = startPage; i <= endPage; i++) {
+                var active = i === pageResult.pageNum ? 'active' : '';
+                var pageBtn = '<li class="page-item ' + active + '">' +
+                    '<a class="page-link" href="#" data-page="' + i + '">' + i + '</a>' +
+                    '</li>';
+                pagination.append(pageBtn);
+            }
+            
+            // 添加"下一页"按钮
+            var nextDisabled = !pageResult.hasNext ? 'disabled' : '';
+            var nextBtn = '<li class="page-item ' + nextDisabled + '">' +
+                '<a class="page-link" href="#" data-page="' + (pageResult.pageNum + 1) + '" aria-label="下一页">' +
+                '<span aria-hidden="true">&raquo;</span>' +
+                '</a>' +
+                '</li>';
+            pagination.append(nextBtn);
+        }
+        
+        // 编辑测评周期
+        function editPeriod(periodId) {
+            $.ajax({
+                url: '/api/evaluation/period/' + periodId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.code === 200) {
+                        const period = response.data;
+                        $('#periodId').val(period.id);
+                        $('#periodName').val(period.name);
+                        $('#periodDescription').val(period.description);
+                        $('#isActive').prop('checked', period.isActive);
+                        
+                        // 设置日期时间
+                        var startTime = new Date(period.startTime);
+                        var endTime = new Date(period.endTime);
+                        
+                        $('#startTime').val(formatDateTimeForInput(startTime));
+                        $('#endTime').val(formatDateTimeForInput(endTime));
+                        
+                        // 更新模态框标题
+                        $('#periodModalTitle').text('编辑测评周期');
+                        
+                        // 显示模态框
+                        $('#addPeriodModal').modal('show');
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    alert('加载测评周期失败，请稍后再试');
+                }
+            });
+        }
+        
+        // 保存测评周期
+        function savePeriod() {
+            var periodId = $('#periodId').val();
+            var isNew = !periodId;
+            
+            var periodData = {
+                name: $('#periodName').val(),
+                startTime: new Date($('#startTime').val()),
+                endTime: new Date($('#endTime').val()),
+                description: $('#periodDescription').val(),
+                isActive: $('#isActive').prop('checked')
+            };
+            
+            if (!isNew) {
+                periodData.id = periodId;
+            }
+            
+            // 验证表单
+            if (!periodData.name) {
+                alert('请输入周期名称');
+                return;
+            }
+            
+            if (isNaN(periodData.startTime.getTime()) || isNaN(periodData.endTime.getTime())) {
+                alert('请输入有效的开始和结束时间');
+                return;
+            }
+            
+            if (periodData.startTime >= periodData.endTime) {
+                alert('开始时间必须早于结束时间');
+                return;
+            }
+            
+            // 提交数据
+            $.ajax({
+                url: '/api/evaluation/period/' + (isNew ? 'create' : 'update'),
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(periodData),
+                success: function(response) {
+                    if (response.code === 200) {
+                        $('#addPeriodModal').modal('hide');
+                        resetPeriodForm();
+                        loadPeriodsByPage(1, 6);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    alert('保存测评周期失败，请稍后再试');
+                }
+            });
+        }
+        
+        // 切换测评周期的启用/禁用状态
+        function togglePeriodStatus(periodId, isActive) {
+            if (!periodId) return;
+            
+            // 先获取当前周期信息
+            $.ajax({
+                url: '/api/evaluation/period/' + periodId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.code === 200) {
+                        // 修改状态
+                        const period = response.data;
+                        period.isActive = isActive;
+                        
+                        // 提交更新
+                        $.ajax({
+                            url: '/api/evaluation/period/update',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(period),
+                            success: function(updateResponse) {
+                                if (updateResponse.code === 200) {
+                                    // 更新成功，刷新列表
+                                    loadPeriodsByPage(1, 6);
+                                } else {
+                                    alert('操作失败: ' + updateResponse.message);
+                                }
+                            },
+                            error: function() {
+                                alert('操作失败，请稍后再试');
+                            }
+                        });
+                    } else {
+                        alert('获取测评周期信息失败: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('获取测评周期信息失败，请稍后再试');
+                }
+            });
+        }
+        
+        // 重置表单
+        function resetPeriodForm() {
+            $('#periodId').val('');
+            $('#periodName').val('');
+            $('#periodDescription').val('');
+            $('#startTime').val('');
+            $('#endTime').val('');
+            $('#isActive').prop('checked', true);
+            $('#periodModalTitle').text('添加新测评周期');
+        }
+        
+        // 格式化日期时间为input标签需要的格式
+        function formatDateTimeForInput(date) {
+            if (!date) return '';
+            return date.getFullYear() + '-' +
+                   padZero(date.getMonth() + 1) + '-' +
+                   padZero(date.getDate()) + 'T' +
+                   padZero(date.getHours()) + ':' +
+                   padZero(date.getMinutes());
+        }
+        
+        // 补零
+        function padZero(num) {
+            return (num < 10 ? '0' : '') + num;
+        }
+    </script>
+</body>
+</html> 

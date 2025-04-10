@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 中层干部测评系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .register-container {
+            max-width: 500px;
+            margin: 80px auto;
+        }
+        .register-card {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .register-card .card-header {
+            background-color: #007bff;
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+        .register-logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .register-logo h2 {
+            color: #007bff;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container register-container">
+        <div class="register-logo">
+            <h2>中层干部测评系统</h2>
+        </div>
+        <div class="card register-card">
+            <div class="card-header">
+                <h5 class="mb-0">用户注册</h5>
+            </div>
+            <div class="card-body">
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="username">用户名</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                        <small class="form-text text-muted">用户名用于登录系统，请使用字母、数字或下划线</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">密码</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">确认密码</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="name">真实姓名</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="department">所属部门</label>
+                        <input type="text" class="form-control" id="department" name="department" required>
+                    </div>
+                    <div class="alert alert-danger d-none" id="registerError"></div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary btn-block" id="registerBtn">注册</button>
+                    </div>
+                </form>
+                <div class="text-center">
+                    <p>已有账号？ <a href="/login">立即登录</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 注册按钮点击事件
+            $('#registerBtn').click(function() {
+                var username = $('#username').val();
+                var password = $('#password').val();
+                var confirmPassword = $('#confirmPassword').val();
+                var name = $('#name').val();
+                var department = $('#department').val();
+                
+                // 表单验证
+                if (!username || !password || !confirmPassword || !name || !department) {
+                    $('#registerError').removeClass('d-none').text('请填写所有必填字段');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    $('#registerError').removeClass('d-none').text('两次输入的密码不一致');
+                    return;
+                }
+                
+                // 发送注册请求
+                $.ajax({
+                    url: '/api/user/register',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        username: username,
+                        password: password,
+                        name: name,
+                        department: department,
+                        role: 'USER'
+                    }),
+                    success: function(response) {
+                        if (response.code === 200) {
+                            alert('注册成功，请登录');
+                            window.location.href = '/login';
+                        } else {
+                            $('#registerError').removeClass('d-none').text(response.message);
+                        }
+                    },
+                    error: function() {
+                        $('#registerError').removeClass('d-none').text('注册失败，请稍后再试');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

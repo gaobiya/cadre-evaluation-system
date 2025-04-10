@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测评结果 - 中层干部测评系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+        }
+        .result-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .score-box {
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .score-box.total {
+            background-color: #007bff;
+            color: white;
+        }
+        .score-box.ability {
+            background-color: #28a745;
+            color: white;
+        }
+        .score-box.attitude {
+            background-color: #ffc107;
+            color: #343a40;
+        }
+        .score-box.performance {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .score-box.discipline {
+            background-color: #6c757d;
+            color: white;
+        }
+        .score-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .chart-container {
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        .dropdown-menu {
+            min-width: 200px;
+        }
+        .dropdown-item {
+            padding: 8px 16px;
+        }
+        .user-welcome {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            color: #fff;
+        }
+        /* 评语列表样式 */
+        .comments-table {
+            margin-top: 15px;
+        }
+        .comments-table th {
+            background-color: #f8f9fa;
+            border-top: none;
+        }
+        .comments-table td {
+            vertical-align: middle;
+        }
+        .comment-text {
+            max-height: 100px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .comment-time {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        .comment-evaluator {
+            font-weight: 500;
+        }
+        .comment-dept {
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">中层干部测评系统</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/cadre/list">干部列表</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/evaluation/form">进行测评</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/evaluation/result">测评结果</a>
+                    </li>
+                </ul>
+                <div class="navbar-nav" id="userInfoNav">
+                    <!-- 用户信息将通过JavaScript动态加载 -->
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">中层干部测评结果</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="resultTable">
+                        <thead>
+                            <tr>
+                                <th>干部姓名</th>
+                                <th>部门</th>
+                                <th>职位</th>
+                                <th>综合得分</th>
+                                <th>评价人数</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 数据将通过JavaScript动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+                <!-- 添加分页控件 -->
+                <div class="mt-4">
+                    <nav aria-label="测评结果分页">
+                        <ul class="pagination justify-content-center" id="resultPagination">
+                            <!-- 分页按钮将通过JavaScript动态加载 -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详细结果模态框 -->
+    <div class="modal fade" id="resultDetailModal" tabindex="-1" role="dialog" aria-labelledby="resultDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resultDetailModalLabel">测评详细结果</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0">基本信息</h6>
+                                </div>
+                                <div class="card-body d-flex flex-column justify-content-center">
+                                    <p class="mb-4"><strong>姓名：</strong><span id="detailName"></span></p>
+                                    <p class="mb-4"><strong>部门：</strong><span id="detailDepartment"></span></p>
+                                    <p class="mb-4"><strong>职位：</strong><span id="detailPosition"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0">得分详情</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="score-box total mb-3">
+                                        <div>综合得分</div>
+                                        <div class="score-value" id="detailTotalScore"></div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <div class="score-box ability" style="background-color: #e74c3c;">
+                                                <div>德</div>
+                                                <div class="score-value" id="detailDeScore"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="score-box attitude" style="background-color: #3498db;">
+                                                <div>能</div>
+                                                <div class="score-value" id="detailNengScore"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="score-box performance" style="background-color: #9b59b6;">
+                                                <div>勤</div>
+                                                <div class="score-value" id="detailQinScore"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="score-box discipline" style="background-color: #2ecc71;">
+                                                <div>绩</div>
+                                                <div class="score-value" id="detailJiScore"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="score-box" style="background-color: #f39c12; color: white;">
+                                                <div>廉</div>
+                                                <div class="score-value" id="detailLianScore"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 评语详情单独占一行 -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0">评语详情</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover comments-table mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 15%">评价人</th>
+                                                    <th style="width: 20%">部门</th>
+                                                    <th style="width: 50%">评语</th>
+                                                    <th style="width: 15%">评价时间</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="commentsList">
+                                                <!-- 评语列表将通过JavaScript动态加载 -->
+                                            </tbody>
+                                        </table>
+                                        <!-- 评语列表分页 -->
+                                        <div class="mt-3">
+                                            <nav aria-label="评语列表分页">
+                                                <ul class="pagination justify-content-center" id="commentsPagination">
+                                                </ul>
+                                            </nav>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 添加评价人列表部分 -->
+                    <div class="evaluators-list mt-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">评价人详情列表</h6>
+                                <span class="badge badge-pill badge-primary" id="evaluatorCount">0人</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>评价人</th>
+                                                <th>部门</th>
+                                                <th>德</th>
+                                                <th>能</th>
+                                                <th>勤</th>
+                                                <th>绩</th>
+                                                <th>廉</th>
+                                                <th>评价时间</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="evaluatorsList">
+                                            <!-- 评价人列表将通过JavaScript动态加载 -->
+                                        </tbody>
+                                    </table>
+                                    <!-- 评价人列表分页 -->
+                                    <div class="mt-3 mb-3">
+                                        <nav aria-label="评价人列表分页">
+                                            <ul class="pagination justify-content-center" id="evaluatorsPagination">
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>中层干部测评系统</h5>
+                    <p>提供全面、客观、公正的干部测评服务</p>
+                </div>
+                <div class="col-md-6 text-md-right">
+                    <p>&copy; 2025 中层干部测评系统</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 页面加载时初始化变量
+            var currentPage = 1;
+            var pageSize = 10;
+            
+            // 获取当前登录用户信息
+            loadCurrentUserNav();
+            
+            // 加载测评结果列表(分页版本)
+            loadEvaluationResultsByPage(currentPage, pageSize);
+            
+            // 点击查看详情按钮
+            $(document).on('click', '.view-detail', function(e) {
+                e.preventDefault(); // 阻止默认行为
+                var cadreId = $(this).data('id');
+                if (cadreId) {
+                    showEvaluationDetail(cadreId);
+                } else {
+                    alert('无法获取干部信息');
+                }
+            });
+            
+            // 分页按钮点击事件
+            $(document).on('click', '.page-link', function(e) {
+                e.preventDefault();
+                var targetPage = $(this).data('page');
+                if (targetPage !== currentPage) {
+                    currentPage = targetPage;
+                    loadEvaluationResultsByPage(currentPage, pageSize);
+                }
+            });
+            
+            // 退出登录
+            $(document).on('click', '#logoutBtn', function() {
+                $.ajax({
+                    url: '/api/user/logout',
+                    type: 'POST',
+                    success: function(response) {
+                        if (response.code === 200) {
+                            window.location.href = '/login';
+                        }
+                    }
+                });
+            });
+        });
+        
+        // 保存用户信息的全局变量
+        var currentUser = null;
+        
+        // 加载当前登录用户信息
+        function loadCurrentUserNav() {
+            $.ajax({
+                url: '/api/user/current',
+                type: 'GET',
+                success: function(response) {
+                    if (response.code === 200) {
+                        var user = response.data;
+                        
+                        currentUser = {
+                            id: user.id,
+                            username: user.username,
+                            name: user.name,
+                            department: user.department,
+                            role: user.role
+                        }; // 保存用户信息
+                        
+                        var userNav = '';
+                        
+                        if (user.role === 'ADMIN') {
+                            userNav = '<div class="dropdown">' +
+                                '<div class="user-welcome mr-2">欢迎您，管理员 ' + user.name + '</div>' +
+                                '<button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-toggle="dropdown">' +
+                                '<i class="fa fa-user"></i>' +
+                                '</button>' +
+                                '<div class="dropdown-menu dropdown-menu-right">' +
+                                '<a class="dropdown-item" href="/cadre/list"><i class="fa fa-list"></i> 干部管理</a>' +
+                                '<div class="dropdown-divider"></div>' +
+                                '<a class="dropdown-item" href="#" id="logoutBtn"><i class="fa fa-sign-out"></i> 退出登录</a>' +
+                                '</div>' +
+                                '</div>';
+                        } else {
+                            userNav = '<div class="dropdown">' +
+                                '<div class="user-welcome mr-2">欢迎您，' + user.name + '</div>' +
+                                '<button class="btn btn-outline-light dropdown-toggle" type="button" id="userDropdown" data-toggle="dropdown">' +
+                                '<i class="fa fa-user"></i>' +
+                                '</button>' +
+                                '<div class="dropdown-menu dropdown-menu-right">' +
+                                '<a class="dropdown-item" href="/evaluation/select-cadre"><i class="fa fa-edit"></i> 进行评价</a>' +
+                                '<div class="dropdown-divider"></div>' +
+                                '<a class="dropdown-item" href="#" id="logoutBtn"><i class="fa fa-sign-out"></i> 退出登录</a>' +
+                                '</div>' +
+                                '</div>';
+                        }
+                        
+                        $('#userInfoNav').html(userNav);
+                    } else {
+                        currentUser = null;
+                    }
+                },
+                error: function(xhr, status, error) {
+                    currentUser = null;
+                    // 未登录或获取失败，显示登录链接
+                    var loginNav = '<a class="btn btn-outline-light my-2 my-sm-0" href="/login">登录</a>' +
+                                  '<a class="btn btn-light my-2 my-sm-0 ml-2" href="/register">注册</a>';
+                    $('#userInfoNav').html(loginNav);
+                }
+            });
+        }
+        
+        // 加载测评结果列表
+        function loadEvaluationResults() {
+            loadEvaluationResultsByPage(1, 10);
+        }
+        
+        // 加载测评结果列表(分页版本)
+        function loadEvaluationResultsByPage(pageNum, pageSize) {
+            $.ajax({
+                url: '/api/cadre/evaluation/page',
+                type: 'GET',
+                data: {
+                    pageNum: pageNum,
+                    pageSize: pageSize
+                },
+                success: function(response) {
+                    if (response.code === 200) {
+                        var pageResult = response.data;
+                        var results = pageResult.list;
+                        var tableBody = $('#resultTable tbody');
+                        tableBody.empty();
+                        
+                        if (results && results.length > 0) {
+                            for (var i = 0; i < results.length; i++) {
+                                var result = results[i];
+                                var row = '<tr>' +
+                                    '<td>' + (result.cadreName || '未知') + '</td>' +
+                                    '<td>' + (result.department || '未知') + '</td>' +
+                                    '<td>' + (result.position || '未知') + '</td>' +
+                                    '<td>' + (result.totalScore ? result.totalScore.toFixed(1) : '0.0') + '</td>' +
+                                    '<td>' + (result.evaluatorCount || 0) + '</td>' +
+                                    '<td>' +
+                                    '<button type="button" class="btn btn-sm btn-info view-detail" data-id="' + result.cadreId + '">' +
+                                    '<i class="fa fa-search"></i> 查看详情' +
+                                    '</button>' +
+                                    '</td>' +
+                                    '</tr>';
+                                tableBody.append(row);
+                            }
+                            
+                            // 渲染分页控件
+                            renderPagination(pageResult);
+                        } else {
+                            tableBody.append('<tr><td colspan="6" class="text-center">暂无测评数据</td></tr>');
+                            $('#resultPagination').empty(); // 清空分页控件
+                        }
+                    } else {
+                        alert('加载测评结果失败: ' + response.message);
+                        $('#resultTable tbody').html('<tr><td colspan="6" class="text-center">加载失败，请刷新页面重试</td></tr>');
+                        $('#resultPagination').empty(); // 清空分页控件
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('加载测评结果失败，请稍后再试');
+                    $('#resultTable tbody').html('<tr><td colspan="6" class="text-center">加载失败，请刷新页面重试</td></tr>');
+                    $('#resultPagination').empty(); // 清空分页控件
+                }
+            });
+        }
+        
+        // 渲染分页控件
+        function renderPagination(pageResult) {
+            var pagination = $('#resultPagination');
+            pagination.empty();
+            
+            // 添加"上一页"按钮
+            var prevDisabled = pageResult.pageNum <= 1 ? 'disabled' : '';
+            var prevBtn = '<li class="page-item ' + prevDisabled + '">' +
+                '<a class="page-link" href="#" data-page="' + (pageResult.pageNum - 1) + '" aria-label="上一页">' +
+                '<span aria-hidden="true">&laquo;</span>' +
+                '</a>' +
+                '</li>';
+            pagination.append(prevBtn);
+            
+            // 添加页码按钮
+            var startPage = Math.max(1, pageResult.pageNum - 2);
+            var endPage = Math.min(pageResult.pages || 1, pageResult.pageNum + 2);
+            
+            for (var i = startPage; i <= endPage; i++) {
+                var active = i === pageResult.pageNum ? 'active' : '';
+                var pageBtn = '<li class="page-item ' + active + '">' +
+                    '<a class="page-link" href="#" data-page="' + i + '">' + i + '</a>' +
+                    '</li>';
+                pagination.append(pageBtn);
+            }
+            
+            // 添加"下一页"按钮
+            var nextDisabled = pageResult.pageNum >= (pageResult.pages || 1) ? 'disabled' : '';
+            var nextBtn = '<li class="page-item ' + nextDisabled + '">' +
+                '<a class="page-link" href="#" data-page="' + (pageResult.pageNum + 1) + '" aria-label="下一页">' +
+                '<span aria-hidden="true">&raquo;</span>' +
+                '</a>' +
+                '</li>';
+            pagination.append(nextBtn);
+        }
+        
+        // 分页相关变量
+        var commentsCurrentPage = 1;
+        var evaluatorsCurrentPage = 1;
+        const PAGE_SIZE = 10;
+        
+        // 显示测评详情
+        function showEvaluationDetail(cadreId) {
+            if (!currentUser) {
+                alert('请先登录');
+                window.location.href = '/login';
+                return;
+            }
+            
+            // 重置分页状态
+            commentsCurrentPage = 1;
+            evaluatorsCurrentPage = 1;
+            $('#resultDetailModal').data('cadreId', cadreId);
+            
+            // 管理员可以查看所有评价详情，普通用户只能查看自己的评价
+            if (currentUser.role === 'ADMIN') {
+                // 管理员查看所有评价汇总
+                loadAllEvaluationDetail(cadreId);
+            } else {
+                // 普通用户查看自己的评价
+                loadMyEvaluationDetail(cadreId);
+            }
+        }
+        
+        // 管理员加载所有评价详情
+        function loadAllEvaluationDetail(cadreId) {
+            $.ajax({
+                url: '/api/cadre/evaluation/' + cadreId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.code === 200) {
+                        var result = response.data;
+                        displayEvaluationDetail(result);
+                        $('#resultDetailModalLabel').text('干部评价汇总详情');
+                        
+                        // 加载评价人列表
+                        loadEvaluatorsList(cadreId);
+                    } else {
+                        alert('获取测评详情失败: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('获取测评详情失败，请稍后再试');
+                }
+            });
+        }
+        
+        // 加载评价人列表
+        function loadEvaluatorsList(cadreId) {
+            $.ajax({
+                url: '/api/evaluation/list/' + cadreId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.code === 200) {
+                        var evaluations = response.data;
+                        
+                        if (evaluations && evaluations.length > 0) {
+                            // 按评价人分组
+                            var groupedEvals = groupEvaluationsByEvaluator(evaluations);
+                            displayEvaluatorsList(groupedEvals);
+                            // 显示评语列表
+                            displayCommentsList(evaluations);
+                        } else {
+                            $('#evaluatorsList').html('<tr><td colspan="8" class="text-center">暂无评价数据</td></tr>');
+                            $('#commentsList').html('<tr><td colspan="4" class="text-center">暂无评语数据</td></tr>');
+                        }
+                    } else {
+                        $('#evaluatorsList').html('<tr><td colspan="8" class="text-center">加载评价数据失败</td></tr>');
+                        $('#commentsList').html('<tr><td colspan="4" class="text-center">加载评语数据失败</td></tr>');
+                    }
+                },
+                error: function() {
+                    $('#evaluatorsList').html('<tr><td colspan="8" class="text-center">加载评价数据失败</td></tr>');
+                    $('#commentsList').html('<tr><td colspan="4" class="text-center">加载评语数据失败</td></tr>');
+                }
+            });
+        }
+        
+        // 按评价人分组评价数据
+        function groupEvaluationsByEvaluator(evaluations) {
+            var groups = {};
+            
+            for (var i = 0; i < evaluations.length; i++) {
+                var eval = evaluations[i];
+                var key = eval.evaluatorName + '_' + eval.evaluatorDept;
+                
+                if (!groups[key]) {
+                    groups[key] = {
+                        evaluatorName: eval.evaluatorName,
+                        evaluatorDept: eval.evaluatorDept,
+                        evaluationTime: eval.evaluationTime,
+                        evaluations: [],
+                        categories: {
+                            '德': [],
+                            '能': [],
+                            '勤': [],
+                            '绩': [],
+                            '廉': []
+                        },
+                        comments: eval.comments
+                    };
+                }
+                
+                groups[key].evaluations.push(eval);
+                
+                // 获取评价指标信息并分类
+                (function(eval, groupKey) {
+                    $.ajax({
+                        async: false, // 同步请求以确保数据分类正确
+                        url: '/api/evaluation/criteria/' + eval.criteriaId,
+                        type: 'GET',
+                        success: function(response) {
+                            if (response.code === 200 && response.data) {
+                                var criteria = response.data;
+                                if (criteria && criteria.category && groups[groupKey] && 
+                                    groups[groupKey].categories && 
+                                    groups[groupKey].categories[criteria.category]) {
+                                    groups[groupKey].categories[criteria.category].push(eval.score);
+                                }
+                            }
+                        }
+                    });
+                })(eval, key);
+            }
+            
+            return Object.values(groups);
+        }
+        
+        // 显示评价人列表
+        function displayEvaluatorsList(groupedEvals) {
+            var tableBody = $('#evaluatorsList');
+            tableBody.empty();
+            
+            if (!groupedEvals || groupedEvals.length === 0) {
+                tableBody.html('<tr><td colspan="8" class="text-center">暂无评价数据</td></tr>');
+                $('#evaluatorCount').text('0人');
+                $('#evaluatorsPagination').empty();
+                return;
+            }
+            
+            $('#evaluatorCount').text(groupedEvals.length + '人');
+            
+            // 计算分页
+            var startIndex = (evaluatorsCurrentPage - 1) * PAGE_SIZE;
+            var endIndex = Math.min(startIndex + PAGE_SIZE, groupedEvals.length);
+            var pageData = groupedEvals.slice(startIndex, endIndex);
+            
+            for (var i = 0; i < pageData.length; i++) {
+                var eval = pageData[i];
+                
+                // 计算各类别平均分，确保是数值
+                var deScore = calculateAverage(eval.categories['德']);
+                var nengScore = calculateAverage(eval.categories['能']);
+                var qinScore = calculateAverage(eval.categories['勤']);
+                var jiScore = calculateAverage(eval.categories['绩']);
+                var lianScore = calculateAverage(eval.categories['廉']);
+                
+                // 计算总平均分
+                var allScores = [];
+                if (eval.evaluations) {
+                    for (var j = 0; j < eval.evaluations.length; j++) {
+                        if (eval.evaluations[j] && typeof eval.evaluations[j].score === 'number') {
+                            allScores.push(eval.evaluations[j].score);
+                        }
+                    }
+                }
+                var totalScore = calculateAverage(allScores);
+                
+                var formattedTime = eval.evaluationTime ? new Date(eval.evaluationTime).toLocaleString() : '-';
+                
+                var row = '<tr>' +
+                    '<td>' + (eval.evaluatorName || '-') + '</td>' +
+                    '<td>' + (eval.evaluatorDept || '-') + '</td>' +
+                    '<td>' + (deScore !== null ? deScore.toFixed(1) : '-') + '</td>' +
+                    '<td>' + (nengScore !== null ? nengScore.toFixed(1) : '-') + '</td>' +
+                    '<td>' + (qinScore !== null ? qinScore.toFixed(1) : '-') + '</td>' +
+                    '<td>' + (jiScore !== null ? jiScore.toFixed(1) : '-') + '</td>' +
+                    '<td>' + (lianScore !== null ? lianScore.toFixed(1) : '-') + '</td>' +
+                    '<td>' + formattedTime + '</td>' +
+                    '</tr>';
+                
+                tableBody.append(row);
+            }
+            
+            // 渲染评价人分页
+            renderEvaluatorsPagination(groupedEvals.length);
+        }
+        
+        // 计算平均值，确保返回数值或null
+        function calculateAverage(array) {
+            if (!array || !Array.isArray(array) || array.length === 0) {
+                return null;
+            }
+            
+            var sum = 0;
+            var count = 0;
+            
+            for (var i = 0; i < array.length; i++) {
+                if (typeof array[i] === 'number') {
+                    sum += array[i];
+                    count++;
+                }
+            }
+            
+            return count > 0 ? sum / count : null;
+        }
+        
+        // 渲染评价人分页控件
+        function renderEvaluatorsPagination(total) {
+            var pagination = $('#evaluatorsPagination');
+            pagination.empty();
+            
+            var totalPages = Math.ceil(total / PAGE_SIZE);
+            if (totalPages <= 1) {
+                return;
+            }
+            
+            // 添加"上一页"按钮
+            var prevDisabled = evaluatorsCurrentPage <= 1 ? 'disabled' : '';
+            pagination.append(
+                '<li class="page-item ' + prevDisabled + '">' +
+                '<a class="page-link evaluators-page" href="#" data-page="' + (evaluatorsCurrentPage - 1) + '">&laquo;</a>' +
+                '</li>'
+            );
+            
+            // 添加页码按钮
+            for (var i = 1; i <= totalPages; i++) {
+                var active = i === evaluatorsCurrentPage ? 'active' : '';
+                pagination.append(
+                    '<li class="page-item ' + active + '">' +
+                    '<a class="page-link evaluators-page" href="#" data-page="' + i + '">' + i + '</a>' +
+                    '</li>'
+                );
+            }
+            
+            // 添加"下一页"按钮
+            var nextDisabled = evaluatorsCurrentPage >= totalPages ? 'disabled' : '';
+            pagination.append(
+                '<li class="page-item ' + nextDisabled + '">' +
+                '<a class="page-link evaluators-page" href="#" data-page="' + (evaluatorsCurrentPage + 1) + '">&raquo;</a>' +
+                '</li>'
+            );
+        }
+        
+        // 普通用户加载自己的评价详情
+        function loadMyEvaluationDetail(cadreId) {
+            $.ajax({
+                url: '/api/evaluation/list/my/' + cadreId,
+                type: 'GET',
+                success: function(response) {
+                    if (response.code === 200) {
+                        var evaluations = response.data;
+                        
+                        if (evaluations && evaluations.length > 0) {
+                            // 获取干部基本信息
+                            $.ajax({
+                                url: '/api/cadre/' + cadreId,
+                                type: 'GET',
+                                success: function(cadreResponse) {
+                                    if (cadreResponse.code === 200) {
+                                        var cadre = cadreResponse.data;
+                                        
+                                        // 先分类评价数据
+                                        var categories = {
+                                            '德': [],
+                                            '能': [],
+                                            '勤': [],
+                                            '绩': [],
+                                            '廉': []
+                                        };
+                                        
+                                        // 获取每个评价的类别
+                                        for (var i = 0; i < evaluations.length; i++) {
+                                            var eval = evaluations[i];
+                                            $.ajax({
+                                                async: false,
+                                                url: '/api/evaluation/criteria/' + eval.criteriaId,
+                                                type: 'GET',
+                                                success: function(response) {
+                                                    if (response.code === 200 && response.data) {
+                                                        var criteria = response.data;
+                                                        if (criteria && criteria.category && 
+                                                            categories[criteria.category] !== undefined) {
+                                                            categories[criteria.category].push(eval.score);
+                                                        }
+                                                    }
+                                                }
+                                            });
+                                        }
+                                        
+                                        // 计算各类别得分
+                                        var deScore = calculateAverage(categories['德']) || 0;
+                                        var nengScore = calculateAverage(categories['能']) || 0;
+                                        var qinScore = calculateAverage(categories['勤']) || 0;
+                                        var jiScore = calculateAverage(categories['绩']) || 0;
+                                        var lianScore = calculateAverage(categories['廉']) || 0;
+                                        
+                                        // 计算总得分 (简单平均，可根据权重调整)
+                                        var totalScore = (deScore + nengScore + qinScore + jiScore + lianScore) / 5;
+                                        
+                                        // 构建评价结果对象
+                                        var myResult = {
+                                            cadreId: cadreId,
+                                            cadreName: cadre.name,
+                                            department: cadre.department,
+                                            position: cadre.position,
+                                            totalScore: totalScore,
+                                            deScore: deScore,
+                                            nengScore: nengScore,
+                                            qinScore: qinScore,
+                                            jiScore: jiScore,
+                                            lianScore: lianScore,
+                                            evaluatorCount: 1, // 只是自己的评价
+                                            comments: evaluations[0].comments || '',
+                                            evaluationPeriod: evaluations[0].evaluationPeriod || '未知'
+                                        };
+                                        
+                                        displayEvaluationDetail(myResult);
+                                        // 显示提示信息，表明这是用户自己的评价
+                                        $('#resultDetailModalLabel').text('我的评价详情');
+                                        
+                                        // 显示评价人列表（只有自己）
+                                        var groups = [{
+                                            evaluatorName: currentUser.username || currentUser.name,
+                                            evaluatorDept: currentUser.department || '',
+                                            evaluationTime: evaluations[0].evaluationTime,
+                                            evaluations: evaluations,
+                                            categories: categories,
+                                            comments: evaluations[0].comments || '',
+                                            evaluationPeriod: evaluations[0].evaluationPeriod || '未知'
+                                        }];
+                                        
+                                        displayEvaluatorsList(groups);
+                                        // 显示评语列表
+                                        displayCommentsList(evaluations);
+                                    } else {
+                                        alert('获取干部信息失败: ' + cadreResponse.message);
+                                    }
+                                },
+                                error: function() {
+                                    alert('获取干部信息失败，请稍后再试');
+                                }
+                            });
+                        } else {
+                            alert('您尚未对此干部进行评价');
+                        }
+                    } else {
+                        alert('获取评价详情失败: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('获取评价详情失败，请稍后再试');
+                }
+            });
+        }
+        
+        // 显示测评详情
+        function displayEvaluationDetail(result) {
+            $('#resultDetailModal').modal('show');
+            
+            $('#detailName').text(result.cadreName || '未知');
+            $('#detailDepartment').text(result.department || '未知');
+            $('#detailPosition').text(result.position || '未知');
+            $('#detailEvaluatorCount').text(result.evaluatorCount || 0);
+            $('#detailComments').text(result.comments || '无');
+            
+            // 确保所有得分都是数值
+            var total = parseFloat(result.totalScore) || 0;
+            var de = parseFloat(result.deScore) || 0;
+            var neng = parseFloat(result.nengScore) || 0;
+            var qin = parseFloat(result.qinScore) || 0;
+            var ji = parseFloat(result.jiScore) || 0;
+            var lian = parseFloat(result.lianScore) || 0;
+            
+            // 显示分数，保留一位小数
+            $('#detailTotalScore').text(total.toFixed(1));
+            $('#detailDeScore').text(de.toFixed(1));
+            $('#detailNengScore').text(neng.toFixed(1));
+            $('#detailQinScore').text(qin.toFixed(1));
+            $('#detailJiScore').text(ji.toFixed(1));
+            $('#detailLianScore').text(lian.toFixed(1));
+        }
+
+        // 显示评语列表
+        function displayCommentsList(evaluations) {
+            var tableBody = $('#commentsList');
+            tableBody.empty();
+            
+            if (!evaluations || evaluations.length === 0) {
+                tableBody.html('<tr><td colspan="4" class="text-center">暂无评语数据</td></tr>');
+                $('#commentsPagination').empty();
+                return;
+            }
+            
+            // 使用Set去重，只保留每个评价人的最新评语
+            var uniqueComments = new Map();
+            evaluations.forEach(function(eval) {
+                if (eval.comments && eval.comments.trim() !== '') {
+                    // 如果是管理员，显示所有评语；如果是普通用户，只显示自己的评语
+                    if (currentUser.role === 'ADMIN' || 
+                        (eval.evaluatorName === currentUser.username || eval.evaluatorName === currentUser.name)) {
+                        var key = eval.evaluatorName + '_' + eval.evaluatorDept;
+                        if (!uniqueComments.has(key) || 
+                            new Date(eval.evaluationTime) > new Date(uniqueComments.get(key).evaluationTime)) {
+                            uniqueComments.set(key, {
+                                evaluatorName: eval.evaluatorName,
+                                evaluatorDept: eval.evaluatorDept,
+                                comments: eval.comments,
+                                evaluationTime: eval.evaluationTime
+                            });
+                        }
+                    }
+                }
+            });
+            
+            if (uniqueComments.size === 0) {
+                tableBody.html('<tr><td colspan="4" class="text-center">暂无评语数据</td></tr>');
+                $('#commentsPagination').empty();
+                return;
+            }
+            
+            // 按评价时间降序排序
+            var sortedComments = Array.from(uniqueComments.values()).sort(function(a, b) {
+                return new Date(b.evaluationTime) - new Date(a.evaluationTime);
+            });
+            
+            // 计算分页
+            var startIndex = (commentsCurrentPage - 1) * PAGE_SIZE;
+            var endIndex = Math.min(startIndex + PAGE_SIZE, sortedComments.length);
+            var pageData = sortedComments.slice(startIndex, endIndex);
+            
+            // 显示当前页的评语
+            pageData.forEach(function(comment) {
+                var formattedTime = comment.evaluationTime ? new Date(comment.evaluationTime).toLocaleString() : '-';
+                var row = '<tr>' +
+                    '<td class="comment-evaluator">' + (comment.evaluatorName || '-') + '</td>' +
+                    '<td class="comment-dept">' + (comment.evaluatorDept || '-') + '</td>' +
+                    '<td class="comment-text">' + (comment.comments || '-') + '</td>' +
+                    '<td class="comment-time">' + formattedTime + '</td>' +
+                    '</tr>';
+                tableBody.append(row);
+            });
+            
+            // 渲染评语分页
+            renderCommentsPagination(sortedComments.length);
+        }
+
+        // 渲染评语分页控件
+        function renderCommentsPagination(total) {
+            var pagination = $('#commentsPagination');
+            pagination.empty();
+            
+            var totalPages = Math.ceil(total / PAGE_SIZE);
+            if (totalPages <= 1) {
+                return;
+            }
+            
+            // 添加"上一页"按钮
+            var prevDisabled = commentsCurrentPage <= 1 ? 'disabled' : '';
+            pagination.append(
+                '<li class="page-item ' + prevDisabled + '">' +
+                '<a class="page-link comments-page" href="#" data-page="' + (commentsCurrentPage - 1) + '">&laquo;</a>' +
+                '</li>'
+            );
+            
+            // 添加页码按钮
+            for (var i = 1; i <= totalPages; i++) {
+                var active = i === commentsCurrentPage ? 'active' : '';
+                pagination.append(
+                    '<li class="page-item ' + active + '">' +
+                    '<a class="page-link comments-page" href="#" data-page="' + i + '">' + i + '</a>' +
+                    '</li>'
+                );
+            }
+            
+            // 添加"下一页"按钮
+            var nextDisabled = commentsCurrentPage >= totalPages ? 'disabled' : '';
+            pagination.append(
+                '<li class="page-item ' + nextDisabled + '">' +
+                '<a class="page-link comments-page" href="#" data-page="' + (commentsCurrentPage + 1) + '">&raquo;</a>' +
+                '</li>'
+            );
+        }
+
+        // 评价人列表分页点击事件
+        $(document).on('click', '.evaluators-page', function(e) {
+            e.preventDefault();
+            var page = $(this).data('page');
+            if (page && page !== evaluatorsCurrentPage) {
+                evaluatorsCurrentPage = page;
+                // 重新加载当前评价人列表
+                var cadreId = $('#resultDetailModal').data('cadreId');
+                loadEvaluatorsList(cadreId);
+            }
+        });
+        
+        // 评语列表分页点击事件
+        $(document).on('click', '.comments-page', function(e) {
+            e.preventDefault();
+            var page = $(this).data('page');
+            if (page && page !== commentsCurrentPage) {
+                commentsCurrentPage = page;
+                // 重新加载当前评语列表
+                var cadreId = $('#resultDetailModal').data('cadreId');
+                loadEvaluatorsList(cadreId);
+            }
+        });
+    </script>
+</body>
+</html> 

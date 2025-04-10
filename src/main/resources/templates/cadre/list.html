@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>干部管理系统 - 干部列表</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+    <style>
+        .container {
+            max-width: 1200px;
+        }
+        .btn-group-sm > .btn, .btn-sm {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">干部管理系统</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">首页</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/cadre/list">干部管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/evaluation/period">测评周期</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login?logout">退出登录</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2>干部列表</h2>
+            </div>
+            <div class="col-md-4 text-right">
+                <button type="button" class="btn btn-success" data-toggle="modal" data-target="#addCadreModal">
+                    <i class="fa fa-plus"></i> 新增干部
+                </button>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="cadreTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>姓名</th>
+                                <th>部门</th>
+                                <th>职位</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 表格内容将通过JavaScript动态加载 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 在表格底部添加分页控件 -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <nav aria-label="干部列表分页">
+                    <ul class="pagination justify-content-center" id="cadrePagination">
+                        <!-- 分页按钮会通过JavaScript动态添加 -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增干部模态框 -->
+    <div class="modal fade" id="addCadreModal" tabindex="-1" aria-labelledby="addCadreModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCadreModalLabel">新增干部</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="addCadreForm">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="addName">姓名</label>
+                            <input type="text" class="form-control" id="addName" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="addDepartment">部门</label>
+                            <input type="text" class="form-control" id="addDepartment" name="department" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="addPosition">职位</label>
+                            <input type="text" class="form-control" id="addPosition" name="position" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑干部模态框 -->
+    <div class="modal fade" id="editCadreModal" tabindex="-1" aria-labelledby="editCadreModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editCadreModalLabel">编辑干部</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="editCadreForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="editId" name="id">
+                        <div class="form-group">
+                            <label for="editName">姓名</label>
+                            <input type="text" class="form-control" id="editName" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editDepartment">部门</label>
+                            <input type="text" class="form-control" id="editDepartment" name="department" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editPosition">职位</label>
+                            <input type="text" class="form-control" id="editPosition" name="position" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // 页面加载时初始化变量
+            var currentPage = 1;
+            var pageSize = 10;
+            
+            // 加载第一页数据
+            loadCadreListByPage(currentPage, pageSize);
+            
+            // 模态框隐藏时清空表单
+            $('#addCadreModal').on('hidden.bs.modal', function () {
+                $('#addCadreForm')[0].reset();
+            });
+            
+            // 删除干部
+            $(document).on('click', '.delete-cadre', function() {
+                var cadreId = $(this).data('id');
+                if (confirm('确定要删除该干部吗？')) {
+                    $.ajax({
+                        url: '/api/cadre/' + cadreId,
+                        type: 'DELETE',
+                        success: function(response) {
+                            if (response.code === 200) {
+                                alert('删除成功');
+                                // 重新加载当前页数据
+                                loadCadreListByPage(currentPage, pageSize);
+                            } else {
+                                alert('删除失败: ' + response.message);
+                            }
+                        },
+                        error: function() {
+                            alert('删除失败，请稍后再试');
+                        }
+                    });
+                }
+            });
+            
+            // 新增干部表单提交
+            $('#addCadreForm').submit(function(e) {
+                e.preventDefault();
+                var cadreData = {
+                    name: $('#addName').val(),
+                    department: $('#addDepartment').val(),
+                    position: $('#addPosition').val()
+                };
+                
+                $.ajax({
+                    url: '/api/cadre/add',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(cadreData),
+                    success: function(response) {
+                        if (response.code === 200) {
+                            // 清空表单
+                            $('#addCadreForm')[0].reset();
+                            $('#addCadreModal').modal('hide');
+                            alert('添加成功');
+                            // 新增后回到第一页
+                            currentPage = 1;
+                            loadCadreListByPage(currentPage, pageSize);
+                        } else {
+                            alert('添加失败: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('添加失败，请稍后再试');
+                    }
+                });
+            });
+            
+            // 显示编辑模态框
+            $(document).on('click', '.edit-cadre', function() {
+                var cadreId = $(this).data('id');
+                
+                $.ajax({
+                    url: '/api/cadre/' + cadreId,
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.code === 200) {
+                            var cadre = response.data;
+                            $('#editId').val(cadre.id);
+                            $('#editName').val(cadre.name);
+                            $('#editDepartment').val(cadre.department);
+                            $('#editPosition').val(cadre.position);
+                            
+                            $('#editCadreModal').modal('show');
+                        } else {
+                            alert('获取干部信息失败: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('获取干部信息失败，请稍后再试');
+                    }
+                });
+            });
+            
+            // 编辑干部表单提交
+            $('#editCadreForm').submit(function(e) {
+                e.preventDefault();
+                var cadreData = {
+                    id: $('#editId').val(),
+                    name: $('#editName').val(),
+                    department: $('#editDepartment').val(),
+                    position: $('#editPosition').val()
+                };
+                
+                $.ajax({
+                    url: '/api/cadre/update',
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify(cadreData),
+                    success: function(response) {
+                        if (response.code === 200) {
+                            $('#editCadreModal').modal('hide');
+                            alert('更新成功');
+                            // 重新加载当前页数据
+                            loadCadreListByPage(currentPage, pageSize);
+                        } else {
+                            alert('更新失败: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('更新失败，请稍后再试');
+                    }
+                });
+            });
+            
+            // 分页按钮点击事件
+            $(document).on('click', '.page-link', function(e) {
+                e.preventDefault();
+                var targetPage = $(this).data('page');
+                if (targetPage !== currentPage) {
+                    currentPage = targetPage;
+                    loadCadreListByPage(currentPage, pageSize);
+                }
+            });
+        });
+        
+        // 加载干部列表（分页版本）
+        function loadCadreListByPage(pageNum, pageSize) {
+            $.ajax({
+                url: '/api/cadre/page',
+                type: 'GET',
+                data: {
+                    pageNum: pageNum,
+                    pageSize: pageSize
+                },
+                success: function(response) {
+                    if (response.code === 200) {
+                        var pageResult = response.data;
+                        var cadres = pageResult.list;
+                        var tableBody = $('#cadreTable tbody');
+                        tableBody.empty();
+                        
+                        for (var i = 0; i < cadres.length; i++) {
+                            var cadre = cadres[i];
+                            var row = '<tr>' +
+                                '<td>' + cadre.id + '</td>' +
+                                '<td>' + cadre.name + '</td>' +
+                                '<td>' + cadre.department + '</td>' +
+                                '<td>' + cadre.position + '</td>' +
+                                '<td>' +
+                                '<button type="button" class="btn btn-sm btn-info mr-2 edit-cadre" data-id="' + cadre.id + '">' +
+                                '<i class="fa fa-edit"></i> 编辑' +
+                                '</button>' +
+                                '<button type="button" class="btn btn-sm btn-danger delete-cadre" data-id="' + cadre.id + '">' +
+                                '<i class="fa fa-trash"></i> 删除' +
+                                '</button>' +
+                                '</td>' +
+                                '</tr>';
+                            tableBody.append(row);
+                        }
+                        
+                        // 渲染分页控件
+                        renderPagination(pageResult);
+                    } else {
+                        alert('加载干部列表失败: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('加载干部列表失败，请稍后再试');
+                }
+            });
+        }
+        
+        // 渲染分页控件
+        function renderPagination(pageResult) {
+            var pagination = $('#cadrePagination');
+            pagination.empty();
+            
+            // 添加"上一页"按钮
+            var prevDisabled = !pageResult.hasPrevious ? 'disabled' : '';
+            var prevBtn = '<li class="page-item ' + prevDisabled + '">' +
+                '<a class="page-link" href="#" data-page="' + (pageResult.pageNum - 1) + '" aria-label="上一页">' +
+                '<span aria-hidden="true">&laquo;</span>' +
+                '</a>' +
+                '</li>';
+            pagination.append(prevBtn);
+            
+            // 添加页码按钮
+            var startPage = Math.max(1, pageResult.pageNum - 2);
+            var endPage = Math.min(pageResult.pages, pageResult.pageNum + 2);
+            
+            for (var i = startPage; i <= endPage; i++) {
+                var active = i === pageResult.pageNum ? 'active' : '';
+                var pageBtn = '<li class="page-item ' + active + '">' +
+                    '<a class="page-link" href="#" data-page="' + i + '">' + i + '</a>' +
+                    '</li>';
+                pagination.append(pageBtn);
+            }
+            
+            // 添加"下一页"按钮
+            var nextDisabled = !pageResult.hasNext ? 'disabled' : '';
+            var nextBtn = '<li class="page-item ' + nextDisabled + '">' +
+                '<a class="page-link" href="#" data-page="' + (pageResult.pageNum + 1) + '" aria-label="下一页">' +
+                '<span aria-hidden="true">&raquo;</span>' +
+                '</a>' +
+                '</li>';
+            pagination.append(nextBtn);
+        }
+        
+        // 旧的非分页加载方法（保留用于参考，可以在生产环境中删除）
+        function loadCadreList() {
+            loadCadreListByPage(1, 10);
+        }
+    </script>
+</body>
+</html>
